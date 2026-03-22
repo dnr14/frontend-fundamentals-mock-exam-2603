@@ -1,10 +1,11 @@
 import { css } from '@emotion/react';
-import { useNavigate } from 'react-router-dom';
 import { colors } from '_tosslib/constants/colors';
 
-export function BackButton() {
-  const navigate = useNavigate();
+interface BackButtonProps {
+  onClick: () => void;
+}
 
+export function BackButton({ onClick }: BackButtonProps) {
   return (
     <div
       css={css`
@@ -13,7 +14,7 @@ export function BackButton() {
     >
       <button
         type="button"
-        onClick={() => navigate('/')}
+        onClick={onClick}
         aria-label="뒤로가기"
         css={css`
           background: none;

@@ -7,7 +7,8 @@ import { BackButton } from './components/BackButton';
 import { FilterPanel } from './components/FilterPanel';
 import { AvailableRoomList } from './components/AvailableRoomList';
 import { useBookingFilter, FILTER_PARAMS_CONFIG, FILTER_VALIDATION_RULES } from './hooks/useBookingFilter';
-import { getStartTimeSlots, getEndTimeSlots, getToday } from './utils/time';
+import { getStartTimeSlots, getEndTimeSlots } from './utils/time';
+import { getToday } from 'utils/date';
 import { parseFromParams, toSearchParams } from 'utils/searchParams';
 import { validate } from 'utils/validation';
 import { useRooms } from './hooks/useRooms';
@@ -65,7 +66,7 @@ export function RoomBookingPage() {
         padding-bottom: 40px;
       `}
     >
-      <BackButton />
+      <BackButton onClick={() => navigate('/')} />
       <Top.Top03
         css={css`
           padding-left: 24px;
