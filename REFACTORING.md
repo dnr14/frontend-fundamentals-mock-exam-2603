@@ -25,7 +25,7 @@ export function validate<T>(value: T, rules: ValidationRule<T>[]): string | null
 }
 ```
 
-각 규칙이 `check + message`로 자체 완결적이고, 인터페이스 자체가 이미 제네릭한 구조라 `<T>`로 여는 비용이 거의 없었습니다.
+각 규칙이 `check + message`로 자체 완결적이고, 인터페이스 자체가 이미 제네릭한 구조라 `<T>`로 여는 비용이 거의 없었습니다. `validate<T>`는 필터 검증 외에도 예약 폼 검증 등 다른 규칙 배열과 조합해 재사용할 수 있습니다.
 
 **사례 2: FilterPanel 컴파운드 패턴 — 필터 항목 추가/제거에 유연한 구조**
 
