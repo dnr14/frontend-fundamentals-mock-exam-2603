@@ -2,7 +2,7 @@
 
 ## 역할
 
-예약 생성 요청(mutation)과 요청 에러 메시지 상태를 관리하는 훅.
+예약 생성 요청(mutation)만 담당하는 훅. 에러 상태, 라우팅은 소비하는 쪽의 관심사.
 
 ## 관심사 분리 과정
 
@@ -28,22 +28,30 @@
 
 콜백 패턴으로 변경해서 **소비하는 쪽에서 결정권**을 갖도록 했다.
 
+### 4단계: errorMessage 상태를 소비자에게 위임
+
+훅 내부에서 `errorMessage` 상태를 관리하면서 `setErrorMessage`까지 외부에 노출하고 있었다. 문제:
+
+- 상태 소유권이 애매하다 — 훅이 만들고, 소비자가 직접 set/clear한다
+- 예약과 무관한 에러(`'회의실을 선택해주세요.'`)도 이 훅의 상태에 넣고 있었다
+
+`onBookingFailed(message)` 콜백으로 에러 메시지를 전달하고, 상태 관리는 소비자가 하도록 변경했다.
+
 ```tsx
-// Before — 훅이 라우팅을 직접 결정
-export function useCreateBooking() {
-  const navigate = useNavigate();
-  // onSuccess 내부에서 navigate('/', ...)
-}
-
-// After — 소비하는 쪽에서 결정
-export function useCreateBooking({ onBookingSuccess, onBookingFailed }: UseCreateBookingOptions) {
-  // onSuccess 내부에서 onBookingSuccess()
-}
-
-// 사용처
-useCreateBooking({
-  onBookingSuccess: () => navigate('/', { state: { message: '예약이 완료되었습니다!' } }),
+// Before — 훅이 에러 상태를 소유하고 setter를 노출
+const { createBooking, isBooking, errorMessage, setErrorMessage, clearError } = useCreateBooking({
+  onBookingSuccess: () => navigate('/'),
   onBookingFailed: () => setSelectedRoomId(null),
+});
+
+// After — 소비자가 에러 상태를 소유
+const [errorMessage, setErrorMessage] = useState<string | null>(null);
+const { createBooking, isBooking } = useCreateBooking({
+  onBookingSuccess: () => navigate('/', { state: { message: '예약이 완료되었습니다!' } }),
+  onBookingFailed: message => {
+    setErrorMessage(message);
+    setSelectedRoomId(null);
+  },
 });
 ```
 
@@ -69,7 +77,7 @@ onSuccess: (result, variables) => {
 
 `onSuccess`에서 `throw`하면 `onError`로 흘러간다. 이렇게 하면:
 
-- 에러 메시지 파싱과 상태 업데이트가 `onError` 한 곳에서 처리된다
+- 에러 메시지 파싱과 콜백 호출이 `onError` 한 곳에서 처리된다
 - HTTP 에러든 비즈니스 로직 실패든 동일한 경로로 처리된다
 
 ## 반환값
@@ -78,18 +86,16 @@ onSuccess: (result, variables) => {
 return {
   createBooking,   // mutation 실행 함수
   isBooking,       // mutation.isPending
-  errorMessage,    // 에러 메시지 상태 (string | null)
-  setErrorMessage, // 직접 에러 메시지 설정 (handleBook에서 벨리데이션 에러 표시용)
-  clearError,      // () => setErrorMessage(null)
 };
 ```
 
-`setErrorMessage`를 외부에 노출하는 이유: 페이지에서 mutation 전 벨리데이션 에러(`'회의실을 선택해주세요.'`)를 같은 에러 UI에 표시하기 위해 필요하다.
+에러 상태, 라우팅, 방 선택 초기화 등 부수효과는 모두 콜백으로 소비자에게 위임한다.
 
 ## 콜백 패턴의 이점
 
 | 관점 | 설명 |
 |------|------|
-| 재사용성 | 라우팅 로직이 없으므로 다른 페이지에서도 사용 가능 |
+| 재사용성 | 라우팅, 에러 상태 로직이 없으므로 다른 페이지에서도 사용 가능 |
 | 테스트 | 콜백을 jest.fn()으로 넘기면 라우터 mock 없이 테스트 가능 |
 | 확장성 | 성공/실패 시 동작을 소비하는 쪽에서 자유롭게 결정 |
+| 역할 단일화 | 훅은 mutation 실행만 담당, 상태 관리는 소비자 |
