@@ -10,13 +10,13 @@
 
 "30분 이상 예약만 허용" 요구사항이 추가되면, 규칙 배열에 한 줄만 넣으면 됩니다. `validate` 함수나 호출부는 수정할 필요 없습니다.
 
-```tsx
-// useBookingFilter.ts — 규칙 배열에 한 줄 추가
-export const FILTER_VALIDATION_RULES: ValidationRule<FilterState>[] = [
-  { check: f => f.endTime <= f.startTime, message: '종료 시간은 시작 시간보다 늦어야 합니다.' },
-  { check: f => f.attendees < 1, message: '참석 인원은 1명 이상이어야 합니다.' },
-  +{ check: f => diffMinutes(f.startTime, f.endTime) < 30, message: '30분 이상 예약해야 합니다.' },
-];
+```diff
+ // useBookingFilter.ts — 규칙 배열에 한 줄 추가
+ export const FILTER_VALIDATION_RULES: ValidationRule<FilterState>[] = [
+   { check: f => f.endTime <= f.startTime, message: '종료 시간은 시작 시간보다 늦어야 합니다.' },
+   { check: f => f.attendees < 1, message: '참석 인원은 1명 이상이어야 합니다.' },
++  { check: f => diffMinutes(f.startTime, f.endTime) < 30, message: '30분 이상 예약해야 합니다.' },
+ ];
 
 // validate 함수 — 수정 불필요
 export function validate<T>(value: T, rules: ValidationRule<T>[]): string | null {
