@@ -13,13 +13,25 @@ interface Reservation {
   equipment: string[];
 }
 
+interface Room {
+  id: string;
+  name: string;
+}
+
 interface MyReservationListProps {
   reservations: Reservation[];
-  getRoomName: (roomId: string) => string;
+  rooms: Room[];
   onCancel: (id: string) => void;
 }
 
-export function MyReservationList({ reservations, getRoomName, onCancel }: MyReservationListProps) {
+function toDisplayReservation(res: Reservation, rooms: Room[]) {
+  const roomName = rooms.find(r => r.id === res.roomId)?.name ?? res.roomId;
+  const summary = `${res.date} ${res.start}~${res.end} · ${res.attendees}명 · ${res.equipment.map(e => EQUIPMENT_LABELS[e]).join(', ') || '장비 없음'}`;
+  return { id: res.id, roomName, summary };
+}
+
+export function MyReservationList({ reservations, rooms, onCancel }: MyReservationListProps) {
+  const displayReservations = reservations.map(res => toDisplayReservation(res, rooms));
   return (
     <div
       css={css`
@@ -44,7 +56,7 @@ export function MyReservationList({ reservations, getRoomName, onCancel }: MyRes
       </div>
       <Spacing size={16} />
 
-      {reservations.length === 0 ? (
+      {displayReservations.length === 0 ? (
         <div
           css={css`
             padding: 40px 0;
@@ -65,7 +77,7 @@ export function MyReservationList({ reservations, getRoomName, onCancel }: MyRes
             gap: 10px;
           `}
         >
-          {reservations.map(res => (
+          {displayReservations.map(res => (
             <div
               key={res.id}
               css={css`
@@ -78,9 +90,9 @@ export function MyReservationList({ reservations, getRoomName, onCancel }: MyRes
               <ListRow
                 contents={
                   <ListRow.Text2Rows
-                    top={getRoomName(res.roomId)}
+                    top={res.roomName}
                     topProps={{ typography: 't6', fontWeight: 'bold', color: colors.grey900 }}
-                    bottom={`${res.date} ${res.start}~${res.end} · ${res.attendees}명 · ${res.equipment.map(e => EQUIPMENT_LABELS[e]).join(', ') || '장비 없음'}`}
+                    bottom={res.summary}
                     bottomProps={{ typography: 't7', color: colors.grey600 }}
                   />
                 }

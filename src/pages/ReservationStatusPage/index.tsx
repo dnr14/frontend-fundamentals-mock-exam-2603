@@ -1,66 +1,34 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { css } from '@emotion/react';
 import { Top, Spacing, Border, Button, Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
+import { MessageBanner } from 'components/MessageBanner';
 import { getToday } from 'utils/date';
-import { useReservationStatus } from './hooks/useReservationStatus';
+import { useRooms } from 'hooks/useRooms';
+import { useReservations } from 'hooks/useReservations';
+import { useMyReservations } from 'hooks/useMyReservations';
+import { useNavigationMessage } from './hooks/useNavigationMessage';
 import { useCancelReservation } from './hooks/useCancelReservation';
 import { Timeline } from './components/Timeline';
 import { MyReservationList } from './components/MyReservationList';
 
 export function ReservationStatusPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [date, setDate] = useState(getToday());
 
-  // 페이지 진입 시 일회성 알림 (예약 완료)
-  const locationState = location.state as { message?: string } | null;
-  const [navigationMessage, setNavigationMessage] = useState<string | null>(
-    locationState?.message ?? null
+  const navigationMessage = useNavigationMessage();
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(
+    navigationMessage ? { type: 'success', text: navigationMessage } : null
   );
 
-  useEffect(() => {
-    if (locationState?.message) {
-      window.history.replaceState({}, '');
-    }
-  }, [locationState]);
-
-  // 취소 액션 피드백
-  const [cancelMessage, setCancelMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
+  const rooms = useRooms();
+  const reservations = useReservations(date);
+  const myReservations = useMyReservations();
   const { cancelReservationById } = useCancelReservation({
-    onCancelSuccess: message => {
-      setCancelMessage({ type: 'success', text: message });
-      setNavigationMessage(null);
-    },
-    onCancelFailed: message => {
-      setCancelMessage({ type: 'error', text: message });
-    },
+    onCancelSuccess: text => setMessage({ type: 'success', text }),
+    onCancelFailed: text => setMessage({ type: 'error', text }),
   });
-
-  const { rooms, reservations, myReservations, getRoomName } = useReservationStatus({ date });
-
-  const [activeReservationId, setActiveReservationId] = useState<string | null>(null);
-
-  const reservationsByRoom = useMemo(() => {
-    const map: Record<string, typeof reservations> = {};
-    for (const r of reservations) {
-      if (!map[r.roomId]) map[r.roomId] = [];
-      map[r.roomId].push(r);
-    }
-    return map;
-  }, [reservations]);
-
-  const handleCancel = (id: string) => {
-    if (window.confirm('정말 취소하시겠습니까?')) {
-      cancelReservationById(id);
-    }
-  };
-
-  // 표시할 메시지 결정: cancel 메시지 우선, 없으면 navigation 메시지
-  const displayMessage = cancelMessage
-    ?? (navigationMessage ? { type: 'success' as const, text: navigationMessage } : null);
 
   return (
     <div
@@ -137,47 +105,16 @@ export function ReservationStatusPage() {
           예약 현황
         </Text>
         <Spacing size={16} />
-        <Timeline
-          rooms={rooms}
-          reservationsByRoom={reservationsByRoom}
-          activeReservationId={activeReservationId}
-          onReservationClick={setActiveReservationId}
-        />
+        <Timeline rooms={rooms} reservations={reservations} />
       </div>
 
       <Spacing size={24} />
       <Border size={8} />
       <Spacing size={24} />
 
-      {displayMessage && (
-        <div
-          css={css`
-            padding: 0 24px;
-          `}
-        >
-          <div
-            css={css`
-              padding: 10px 14px;
-              border-radius: 10px;
-              background: ${displayMessage.type === 'success' ? colors.blue50 : colors.red50};
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            `}
-          >
-            <Text
-              typography="t7"
-              fontWeight="medium"
-              color={displayMessage.type === 'success' ? colors.blue600 : colors.red500}
-            >
-              {displayMessage.text}
-            </Text>
-          </div>
-          <Spacing size={12} />
-        </div>
-      )}
+      {message && <MessageBanner type={message.type} text={message.text} />}
 
-      <MyReservationList reservations={myReservations} getRoomName={getRoomName} onCancel={handleCancel} />
+      <MyReservationList reservations={myReservations} rooms={rooms} onCancel={cancelReservationById} />
 
       <Spacing size={24} />
       <Border size={8} />

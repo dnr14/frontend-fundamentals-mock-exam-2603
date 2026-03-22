@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { getRooms, getReservations } from 'pages/remotes';
+import { useRooms as useRoomsQuery } from 'hooks/useRooms';
+import { useReservations } from 'hooks/useReservations';
 
 interface Room {
   id: string;
@@ -63,13 +63,8 @@ interface UseRoomsParams {
 }
 
 export function useRooms({ filter }: UseRoomsParams) {
-  const { data: rooms = [] } = useQuery<Room[]>({ queryKey: ['rooms'], queryFn: getRooms });
-
-  const { data: reservations = [] } = useQuery<Reservation[]>({
-    queryKey: ['reservations', filter.date],
-    queryFn: () => getReservations(filter.date),
-    enabled: !!filter.date,
-  });
+  const rooms = useRoomsQuery();
+  const reservations = useReservations(filter.date);
 
   const availableRooms = filterRooms(rooms, reservations, filter).sort(byFloorThenName);
 

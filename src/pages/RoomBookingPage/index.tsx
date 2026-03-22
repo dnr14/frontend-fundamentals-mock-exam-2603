@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { css } from '@emotion/react';
-import { Top, Spacing, Border, Text } from '_tosslib/components';
+import { Top, Spacing, Border } from '_tosslib/components';
+import { MessageBanner } from 'components/MessageBanner';
 import { colors } from '_tosslib/constants/colors';
 import { BackButton } from './components/BackButton';
 import { FilterPanel } from './components/FilterPanel';
@@ -77,27 +78,10 @@ export function RoomBookingPage() {
       </Top.Top03>
 
       {errorMessage && (
-        <div
-          css={css`
-            padding: 0 24px;
-          `}
-        >
+        <>
           <Spacing size={12} />
-          <div
-            css={css`
-              padding: 10px 14px;
-              border-radius: 10px;
-              background: ${colors.red50};
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            `}
-          >
-            <Text typography="t7" fontWeight="medium" color={colors.red500}>
-              {errorMessage}
-            </Text>
-          </div>
-        </div>
+          <MessageBanner type="error" text={errorMessage} />
+        </>
       )}
 
       <Spacing size={24} />

@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { css } from '@emotion/react';
 import { Text } from '_tosslib/components';
 import { colors } from '_tosslib/constants/colors';
@@ -6,8 +7,9 @@ import { EQUIPMENT_LABELS } from 'constants/equipment';
 const TIMELINE_START = 9;
 const TIMELINE_END = 20;
 const TOTAL_MINUTES = (TIMELINE_END - TIMELINE_START) * 60;
-const HOUR_LABELS = Array.from({ length: TIMELINE_END - TIMELINE_START + 1 }, (_, i) =>
-  `${String(TIMELINE_START + i).padStart(2, '0')}:00`
+const HOUR_LABELS = Array.from(
+  { length: TIMELINE_END - TIMELINE_START + 1 },
+  (_, i) => `${String(TIMELINE_START + i).padStart(2, '0')}:00`
 );
 
 function timeToMinutes(time: string): number {
@@ -22,6 +24,7 @@ interface Room {
 
 interface Reservation {
   id: string;
+  roomId: string;
   start: string;
   end: string;
   attendees: number;
@@ -30,12 +33,21 @@ interface Reservation {
 
 interface TimelineProps {
   rooms: Room[];
-  reservationsByRoom: Record<string, Reservation[]>;
-  activeReservationId: string | null;
-  onReservationClick: (id: string | null) => void;
+  reservations: Reservation[];
 }
 
-export function Timeline({ rooms, reservationsByRoom, activeReservationId, onReservationClick }: TimelineProps) {
+export function Timeline({ rooms, reservations }: TimelineProps) {
+  const [activeReservationId, setActiveReservationId] = useState<string | null>(null);
+
+  const reservationsByRoom = useMemo(
+    () =>
+      reservations.reduce<Record<string, Reservation[]>>((map, r) => {
+        (map[r.roomId] ??= []).push(r);
+        return map;
+      }, {}),
+    [reservations]
+  );
+
   return (
     <div
       css={css`
@@ -146,7 +158,7 @@ export function Timeline({ rooms, reservationsByRoom, activeReservationId, onRes
                     <div
                       role="button"
                       aria-label={`${room.name} ${res.start}-${res.end} 예약 상세`}
-                      onClick={() => onReservationClick(isActive ? null : res.id)}
+                      onClick={() => setActiveReservationId(isActive ? null : res.id)}
                       css={css`
                         width: 100%;
                         height: 100%;
