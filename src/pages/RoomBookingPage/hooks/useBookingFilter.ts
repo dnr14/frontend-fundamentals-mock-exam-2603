@@ -3,7 +3,7 @@ import { type ParamsConfig } from 'utils/searchParams';
 import { type ValidationRule } from 'utils/validation';
 import { getToday } from 'utils/date';
 
-export interface FilterState {
+interface FilterState {
   date: string;
   startTime: string;
   endTime: string;
