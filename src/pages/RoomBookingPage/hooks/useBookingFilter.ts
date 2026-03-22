@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { type ParamsConfig } from 'utils/searchParams';
 import { type ValidationRule } from 'utils/validation';
-import { getToday } from '../utils/time';
+import { getToday } from 'utils/date';
 
 export interface FilterState {
   date: string;
