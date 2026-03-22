@@ -7,7 +7,7 @@ import { MessageBanner } from 'components/MessageBanner';
 import { getToday } from 'utils/date';
 import { useRooms } from 'hooks/useRooms';
 import { useReservations } from 'hooks/useReservations';
-import { useMyReservations } from 'hooks/useMyReservations';
+import { useMyReservations } from './hooks/useMyReservations';
 import { useNavigationMessage } from './hooks/useNavigationMessage';
 import { useCancelReservation } from './hooks/useCancelReservation';
 import { Timeline } from './components/Timeline';

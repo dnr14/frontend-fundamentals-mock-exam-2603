@@ -11,7 +11,7 @@ import { getStartTimeSlots, getEndTimeSlots } from './utils/time';
 import { getToday } from 'utils/date';
 import { parseFromParams, toSearchParams } from 'utils/searchParams';
 import { validate } from 'utils/validation';
-import { useRooms } from './hooks/useRooms';
+import { useAvailableRooms } from './hooks/useAvailableRooms';
 import { useCreateBooking } from './hooks/useCreateBooking';
 
 export function RoomBookingPage() {
@@ -37,7 +37,7 @@ export function RoomBookingPage() {
     },
   });
 
-  const { rooms, availableRooms } = useRooms({ filter });
+  const { rooms, availableRooms } = useAvailableRooms({ filter });
   const floors = [...new Set(rooms.map((r: { floor: number }) => r.floor))].sort((a, b) => a - b);
 
   const hasTimeInputs = filter.startTime !== '' && filter.endTime !== '';

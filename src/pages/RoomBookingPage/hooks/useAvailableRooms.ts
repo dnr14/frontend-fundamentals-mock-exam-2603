@@ -1,4 +1,4 @@
-import { useRooms as useRoomsQuery } from 'hooks/useRooms';
+import { useRooms } from 'hooks/useRooms';
 import { useReservations } from 'hooks/useReservations';
 
 interface Room {
@@ -62,8 +62,8 @@ interface UseRoomsParams {
   filter: RoomFilter;
 }
 
-export function useRooms({ filter }: UseRoomsParams) {
-  const rooms = useRoomsQuery();
+export function useAvailableRooms({ filter }: UseRoomsParams) {
+  const rooms = useRooms();
   const reservations = useReservations(filter.date);
 
   const availableRooms = filterRooms(rooms, reservations, filter).sort(byFloorThenName);
