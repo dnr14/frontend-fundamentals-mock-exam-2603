@@ -25,11 +25,57 @@ export function validate<T>(value: T, rules: ValidationRule<T>[]): string | null
 }
 ```
 
-각 규칙이 `check + message`로 자체 완결적이고, 인터페이스 자체가 이미 제네릭한 구조라 `<T>`로 여는 비용이 거의 없었습니다. `validate<T>`는 필터 검증 외에도 예약 폼 검증 등 다른 규칙 배열과 조합해 재사용할 수 있습니다.
+각 규칙이 `check + message`로 자체 완결적이고, 인터페이스 자체가 이미 제네릭한 구조라 `<T>`로 여는 비용이 거의 없었습니다. `validate<T>`는 현재 필터 검증에 사용하지만, 다른 도메인에서도 규칙 배열만 정의하면 동일하게 사용할 수 있습니다:
+
+```tsx
+// 예약 폼 검증 — 같은 validate 함수, 다른 규칙 배열
+const BOOKING_RULES: ValidationRule<BookingForm>[] = [
+  { check: form => !form.roomId, message: '회의실을 선택해주세요.' },
+  { check: form => !form.title.trim(), message: '예약 제목을 입력해주세요.' },
+];
+
+const error = validate(bookingForm, BOOKING_RULES);
+```
 
 **사례 2: FilterPanel 컴파운드 패턴 — 필터 항목 추가/제거에 유연한 구조**
 
-필터는 비즈니스 요구사항에 따라 항목 추가/제거가 자주 발생하는 영역입니다. 기존 단일 props 방식(16개 props)에서는 필터 항목 하나를 제거할 때 FilterPanel 내부 JSX, Props 인터페이스, index.tsx 3곳을 수정해야 했습니다. 컴파운드 패턴에서는 소비자(index.tsx) 1곳에서 끝납니다.
+필터는 비즈니스 요구사항에 따라 항목 추가/제거가 자주 발생하는 영역입니다. "참석 인원" 필터를 제거하는 상황을 비교합니다.
+
+기존 단일 props 방식에서는 **3곳**을 수정해야 합니다:
+
+```diff
+ // 1. FilterPanelProps 인터페이스에서 관련 props 제거
+ interface FilterPanelProps {
+   date: string;
+   startTime: string;
+   endTime: string;
+-  attendees: number;
+-  onAttendeesChange: (value: number) => void;
+   equipment: string[];
+   // ... 나머지 props
+ }
+
+ // 2. FilterPanel 내부 JSX에서 해당 UI 제거
+ function FilterPanel(props: FilterPanelProps) {
+   return (
+     <div>
+-      <input type="number" value={props.attendees} onChange={...} />
+       {/* ... */}
+     </div>
+   );
+ }
+
+ // 3. index.tsx에서 해당 prop 전달 제거
+ <FilterPanel
+   date={filter.date}
+-  attendees={filter.attendees}
+-  onAttendeesChange={changeAttendees}
+   equipment={filter.equipment}
+   // ...
+ />
+```
+
+컴파운드 패턴에서는 소비자(index.tsx) **1곳**에서 끝납니다:
 
 ```diff
  <FilterPanel validationError={validationError}>
@@ -44,51 +90,61 @@ export function validate<T>(value: T, rules: ValidationRule<T>[]): string | null
  </FilterPanel>
 ```
 
-FilterPanel 컴포넌트 내부 수정이나 props 인터페이스 변경 없이, 소비자 측에서 해당 줄만 지우면 됩니다. 추가도 마찬가지로 서브 컴포넌트를 한 줄 넣으면 끝입니다. 레이아웃 결정권도 소비자에게 있어서, `FilterPanel.Row`로 감쌀지 각각 배치할지도 소비자가 결정합니다.
+FilterPanel 컴포넌트 내부 수정이나 props 인터페이스 변경이 없습니다.
 
 **사례 3: updateFilter — FilterState 필드 추가 시 기존 호출부 수정 불필요**
 
 `updateFilter`가 `Partial<FilterState>`를 받으므로, FilterState에 새 필드가 추가되어도 기존 `updateFilter` 호출부는 수정할 필요가 없습니다.
 
-개별 핸들러 방식이었다면 필드 추가 시 보일러플레이트가 발생합니다:
+예를 들어 "선호 회의실" 필터가 추가되면, FilterState에 필드를 추가합니다:
+
+```diff
+ interface FilterState {
+   date: string;
+   startTime: string;
+   endTime: string;
+   attendees: number;
+   equipment: string[];
+   preferredFloor: number | null;
++  preferredRoom: string | null;
+ }
+```
+
+개별 핸들러 방식이었다면 필드 추가마다 보일러플레이트가 발생합니다:
 
 ```tsx
 // Before — 필드마다 개별 핸들러 (보일러플레이트)
 // 1. 훅 내부에 핸들러 추가
 const changeDate = (value: string) => updateFilter({ date: value });
 const changeStartTime = (value: string) => updateFilter({ startTime: value });
-const changePurpose = (value: string) => updateFilter({ purpose: value }); // 새 필드 — 핸들러 추가
+const changePreferredRoom = (value: string | null) => updateFilter({ preferredRoom: value }); // 핸들러 추가
 
 // 2. 훅 return에 export 추가
-return { changeDate, changeStartTime, ..., changePurpose };
+return { changeDate, changeStartTime, ..., changePreferredRoom };
 
 // 3. 소비하는 쪽에서 import 연결
-const { changeDate, changeStartTime, ..., changePurpose } = useBookingFilter(...);
-<FilterPanel.Purpose onChange={changePurpose} />
+const { changeDate, changeStartTime, ..., changePreferredRoom } = useBookingFilter(...);
+<FilterPanel.Room onChange={changePreferredRoom} />
 ```
 
 `updateFilter`를 직접 노출하면 이 보일러플레이트가 사라집니다:
 
 ```tsx
 // After — Partial<FilterState>를 받는 updateFilter
-const updateFilter = (patch: Partial<FilterState>) => {
-  setFilter(prev => {
-    const next = { ...prev, ...patch };
-    onFilterChange?.(next);
-    return next;
-  });
-};
-
 // 소비하는 쪽 — 기존 코드 수정 없이 새 필드만 추가
-<FilterPanel.Date onChange={value => updateFilter({ date: value })} />       // 기존 — 변경 없음
-<FilterPanel.Purpose onChange={value => updateFilter({ purpose: value })} /> // 새 필드 — 추가만
+<FilterPanel.Date onChange={value => updateFilter({ date: value })} />              // 기존 — 변경 없음
+<FilterPanel.Room onChange={value => updateFilter({ preferredRoom: value })} />     // 새 필드 — 추가만
 ```
 
-훅에 핸들러 추가 → export → import 연결의 3단계가 사라지고, 소비하는 쪽에서 `updateFilter({ newField: value })` 한 줄이면 됩니다. FilterState 인터페이스에 필드를 추가하면, `DEFAULT_FILTER`, `FILTER_PARAMS_CONFIG`, `FILTER_VALIDATION_RULES`가 같은 파일(`useBookingFilter.ts`)에 응집되어 있으므로 한 파일에서 수정이 끝납니다.
+훅에 핸들러 추가 → export → import 연결의 3단계가 사라지고, 소비하는 쪽에서 `updateFilter({ preferredRoom: value })` 한 줄이면 됩니다. `DEFAULT_FILTER`, `FILTER_PARAMS_CONFIG`, `FILTER_VALIDATION_RULES`가 같은 파일(`useBookingFilter.ts`)에 응집되어 있으므로 한 파일에서 수정이 끝납니다.
 
 ---
 
-이 세 사례의 공통점은 **변경 지점이 열려 있고, 수정 범위가 한 곳으로 좁혀진다**는 것입니다. 아래에서 이 원칙을 뒷받침하는 설계 결정들을 설명합니다.
+이 세 사례의 공통점은 **변경 지점이 열려 있고, 수정 범위가 한 곳으로 좁혀진다**는 것입니다.
+
+세 사례 모두 RoomBookingPage에 집중되어 있습니다. 필터 항목 추가/제거, 검증 규칙 변경, URL 파라미터 확장 등 비즈니스 변경이 자주 발생하는 영역이기 때문입니다. 반면 ReservationStatusPage는 타임라인 표시, 예약 목록, 취소 등 구조가 안정적인 영역이라 동일한 패턴을 억지로 적용하지 않았습니다. **변화에 유연한 구조는 모든 곳에 적용하는 것이 아니라, 변경 빈도가 높은 영역에 집중하는 것**이 핵심입니다.
+
+아래에서 이 원칙을 뒷받침하는 설계 결정들을 설명합니다.
 
 ## 1. 관심사 분리: UI <- State/Logic <- Data
 
