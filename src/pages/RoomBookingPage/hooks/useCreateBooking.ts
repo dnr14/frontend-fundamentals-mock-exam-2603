@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createReservation } from 'pages/remotes';
 import axios from 'axios';
@@ -14,12 +13,11 @@ interface BookingParams {
 
 interface UseCreateBookingOptions {
   onBookingSuccess: () => void;
-  onBookingFailed: () => void;
+  onBookingFailed: (message: string) => void;
 }
 
 export function useCreateBooking({ onBookingSuccess, onBookingFailed }: UseCreateBookingOptions) {
   const queryClient = useQueryClient();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: (data: BookingParams) => createReservation(data),
@@ -43,8 +41,7 @@ export function useCreateBooking({ onBookingSuccess, onBookingFailed }: UseCreat
         const data = err.response?.data as { message?: string } | undefined;
         message = data?.message ?? message;
       }
-      setErrorMessage(message);
-      onBookingFailed();
+      onBookingFailed(message);
     },
   });
 
@@ -53,8 +50,5 @@ export function useCreateBooking({ onBookingSuccess, onBookingFailed }: UseCreat
   return {
     createBooking,
     isBooking: mutation.isPending,
-    errorMessage,
-    setErrorMessage,
-    clearError: () => setErrorMessage(null),
   };
 }
