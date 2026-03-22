@@ -4,7 +4,6 @@ import { css } from '@emotion/react';
 import { Top, Spacing, Border } from '_tosslib/components';
 import { MessageBanner } from 'components/MessageBanner';
 import { colors } from '_tosslib/constants/colors';
-import { BackButton } from './components/BackButton';
 import { FilterPanel } from './components/FilterPanel';
 import { AvailableRoomList } from './components/AvailableRoomList';
 import { useBookingFilter, FILTER_PARAMS_CONFIG, FILTER_VALIDATION_RULES } from './hooks/useBookingFilter';
@@ -67,7 +66,30 @@ export function RoomBookingPage() {
         padding-bottom: 40px;
       `}
     >
-      <BackButton onClick={() => navigate('/')} />
+      <div
+        css={css`
+          padding: 12px 24px 0;
+        `}
+      >
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          aria-label="뒤로가기"
+          css={css`
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            font-size: 14px;
+            color: ${colors.grey600};
+            &:hover {
+              color: ${colors.grey900};
+            }
+          `}
+        >
+          ← 예약 현황으로
+        </button>
+      </div>
       <Top.Top03
         css={css`
           padding-left: 24px;
