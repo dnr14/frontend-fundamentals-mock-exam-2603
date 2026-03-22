@@ -18,14 +18,20 @@ interface Room {
 }
 
 interface AvailableRoomListProps {
-  rooms: Room[];
+  availableRooms: Room[];
   selectedRoomId: string | null;
   isBooking: boolean;
   onSelectRoom: (roomId: string) => void;
   onBook: () => void;
 }
 
-export function AvailableRoomList({ rooms, selectedRoomId, isBooking, onSelectRoom, onBook }: AvailableRoomListProps) {
+export function AvailableRoomList({
+  availableRooms,
+  selectedRoomId,
+  isBooking,
+  onSelectRoom,
+  onBook,
+}: AvailableRoomListProps) {
   return (
     <div
       css={css`
@@ -43,12 +49,12 @@ export function AvailableRoomList({ rooms, selectedRoomId, isBooking, onSelectRo
           예약 가능 회의실
         </Text>
         <Text typography="t7" fontWeight="medium" color={colors.grey500}>
-          {rooms.length}개
+          {availableRooms.length}개
         </Text>
       </div>
       <Spacing size={16} />
 
-      {rooms.length === 0 ? (
+      {availableRooms.length === 0 ? (
         <div
           css={css`
             padding: 40px 0;
@@ -69,7 +75,7 @@ export function AvailableRoomList({ rooms, selectedRoomId, isBooking, onSelectRo
             gap: 10px;
           `}
         >
-          {rooms.map(room => {
+          {availableRooms.map(room => {
             const isSelected = selectedRoomId === room.id;
             return (
               <div
@@ -95,7 +101,9 @@ export function AvailableRoomList({ rooms, selectedRoomId, isBooking, onSelectRo
                     <ListRow.Text2Rows
                       top={room.name}
                       topProps={{ typography: 't6', fontWeight: 'bold', color: colors.grey900 }}
-                      bottom={`${room.floor}층 · ${room.capacity}명 · ${room.equipment.map(e => EQUIPMENT_LABELS[e]).join(', ')}`}
+                      bottom={`${room.floor}층 · ${room.capacity}명 · ${room.equipment
+                        .map(e => EQUIPMENT_LABELS[e])
+                        .join(', ')}`}
                       bottomProps={{ typography: 't7', color: colors.grey600 }}
                     />
                   }
